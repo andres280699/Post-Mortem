@@ -38,7 +38,7 @@ class AppRoma(tk.Tk):
         titulo.pack(pady=20)
 
         botones = [
-            ("▶️ Continuar", self.continuar),
+            ("▶️ Continuarlelelele", self.continuar),
             ("🛡️ Nuevo Juego", self.mostrar_menu_nuevo_juego),
             ("⚙️ Settings", self.configuraciones),
             ("❌ Salir", self.quit)
