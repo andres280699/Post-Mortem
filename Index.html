@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🏛️ App Roma - Menú Principal</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Helvetica, sans-serif;
+      background-color: #333;
+      color: gold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin-top: 50px;
+      font-size: 48px;
+    }
+
+    .menu {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .boton {
+      background-color: gold;
+      color: black;
+      border: none;
+      padding: 15px 40px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+
+    .boton:hover {
+      background-color: darkgoldenrod;
+    }
+
+    #menu-nuevo-juego {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 id="titulo">🏛️ APP ROMA</h1>
+
+  <div id="menu-principal" class="menu">
+    <button class="boton" onclick="alert('Continuar presionado')">▶️ Continuar</button>
+    <button class="boton" onclick="cambiarMenu('nuevo')">🛡️ Nuevo Juego</button>
+    <button class="boton" onclick="alert('Configuraciones abiertas')">⚙️ Configuraciones</button>
+    <button class="boton" onclick="confirmarSalida()">❌ Salir</button>
+  </div>
+
+  <div id="menu-nuevo-juego" class="menu">
+    <button class="boton" onclick="alert('Modo Campaña seleccionado')">🏺 Campaña</button>
+    <button class="boton" onclick="abrirModoLibre()">🏛️ Modo Libre</button>
+    <button class="boton" onclick="alert('Modo Creativo seleccionado')">🧱 Creativo</button>
+    <button class="boton" onclick="cambiarMenu('principal')">🔙 Atrás</button>
+  </div>
+
+  <script type="text/javascript">
+    let pyodide = null;
+
+    async function iniciarPyodide() {
+      console.log("Cargando Pyodide...");
+      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
+      console.log("Pyodide cargado.");
+    }
+
+    async function abrirModoLibre() {
+      if (pyodide && pyodide.runPythonAsync) {
+        try {
+          await pyodide.runPythonAsync(`
+from Mapa.mapa_desplazable import MapaDesplazable
+MapaDesplazable().run()
+          `);
+        } catch (error) {
+          console.error("Error al ejecutar el modo libre:", error);
+          alert("No se pudo cargar el modo libre.");
+        }
+      } else {
+        alert("Python aún no ha sido cargado.");
+      }
+    }
+
+    function cambiarMenu(menu) {
+      const titulo = document.getElementById("titulo");
+      const menuPrincipal = document.getElementById("menu-principal");
+      const menuNuevoJuego = document.getElementById("menu-nuevo-juego");
+
+      if (menu === "nuevo") {
+        titulo.textContent = "Nuevo Juego";
+        menuPrincipal.style.display = "none";
+        menuNuevoJuego.style.display = "flex";
+      } else {
+        titulo.textContent = "🏛️ APP ROMA";
+        menuPrincipal.style.display = "flex";
+        menuNuevoJuego.style.display = "none";
+      }
+    }
+
+    function confirmarSalida() {
+      if (confirm("¿Estás seguro que quieres salir?")) {
+        window.close();
+      }
+    }
+
+    // Iniciar Pyodide al cargar la página
+    window.addEventListener("load", iniciarPyodide);
+  </script>
+
+  <!-- Cargar Pyodide desde CDN -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
+</body>
+</html>

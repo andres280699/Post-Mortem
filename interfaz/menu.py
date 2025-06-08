@@ -1,135 +1,80 @@
-import tkinter as tk
-from tkinter import messagebox
-from PIL import Image, ImageTk
-import threading
+import pygame
+import sys
 from Mapa.mapa_desplazable import MapaDesplazable
 
-import os
-
-# Constantes de configuración
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RUTA_IMAGEN_FONDO = os.path.join(BASE_DIR, "..", "assets", "menu.jpg")
-COLOR_FONDO_MENU_PRINCIPAL = "#333333"
-COLOR_FONDO_MENU_NUEVO_JUEGO = "#222222"
-COLOR_BOTON_BG = "gold"
-COLOR_BOTON_FG = "black"
-COLOR_BOTON_ACTIVE_BG = "darkgoldenrod"
+# Configuración
 ANCHO_VENTANA = 900
 ALTO_VENTANA = 600
-ANCHO_BOTON = 20
-FUENTE_TITULO = ("Helvetica", 28, "bold")
-FUENTE_BOTON = ("Helvetica", 16)
+COLOR_FONDO = (51, 51, 51)
+COLOR_BOTON = (255, 215, 0)
+COLOR_BOTON_ACTIVO = (184, 134, 11)
+COLOR_TEXTO = (0, 0, 0)
+FUENTE_TITULO = 48
+FUENTE_BOTON = 28
 
-class AppRoma(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("🏛️ App Roma - Menú Principal")
-        self.geometry(f"{ANCHO_VENTANA}x{ALTO_VENTANA}")
-        self.resizable(False, False)
+pygame.init()
+pantalla = pygame.display.set_mode((ANCHO_VENTANA, ALTO_VENTANA))
+pygame.display.set_caption("🏛️ App Roma - Menú Principal")
+fuente_titulo = pygame.font.SysFont("Helvetica", FUENTE_TITULO, bold=True)
+fuente_boton = pygame.font.SysFont("Helvetica", FUENTE_BOTON)
 
-        # Cargar imagen de fondo
-        self.fondo = None
-        self.cargar_imagen_fondo(RUTA_IMAGEN_FONDO)
+# Botones como lista de tuplas (texto, función)
+opciones_menu_principal = [
+    ("▶️ Continuar", lambda: print("Continuar presionado")),
+    ("🛡️ Nuevo Juego", lambda: cambiar_menu("nuevo")),
+    ("⚙️ Configuraciones", lambda: print("Configurar...")),
+    ("❌ Salir", lambda: sys.exit())
+]
 
-        # Label para mostrar la imagen de fondo
-        self.label_fondo = tk.Label(self, image=self.fondo)
-        self.label_fondo.place(x=0, y=0, relwidth=1, relheight=1)
+opciones_nuevo_juego = [
+    ("🏺 Campaña", lambda: print("Modo Campaña")),
+    ("🏛️ Modo Libre", lambda: abrir_modo_libre()),
+    ("🧱 Creativo", lambda: print("Modo Creativo")),
+    ("🔙 Atrás", lambda: cambiar_menu("principal"))
+]
 
-        # Crear menús
-        self.menu_principal = None
-        self.menu_nuevo_juego = None
-        self.crear_menu_principal()
-        self.crear_menu_nuevo_juego()
+menu_actual = "principal"
 
-        # Mostrar menú principal inicialmente
-        self.mostrar_menu(self.menu_principal)
+def dibujar_menu(opciones, titulo):
+    pantalla.fill(COLOR_FONDO)
+    texto_titulo = fuente_titulo.render(titulo, True, COLOR_BOTON)
+    pantalla.blit(texto_titulo, ((ANCHO_VENTANA - texto_titulo.get_width()) // 2, 60))
 
-    def cargar_imagen_fondo(self, ruta):
-        """Carga la imagen de fondo y la guarda en self.fondo"""
-        if os.path.exists(ruta):
-            try:
-                imagen = Image.open(ruta).resize((ANCHO_VENTANA, ALTO_VENTANA))
-                self.fondo = ImageTk.PhotoImage(imagen)
-            except Exception as e:
-                messagebox.showerror("Error", f"No se pudo cargar la imagen de fondo:\n{e}")
-                self.fondo = None
-        else:
-            messagebox.showwarning("Advertencia", f"No se encontró la imagen en:\n{ruta}")
-            self.fondo = None
+    botones = []
+    for i, (texto, _) in enumerate(opciones):
+        rect = pygame.Rect((ANCHO_VENTANA // 2 - 150, 150 + i * 80, 300, 50))
+        pygame.draw.rect(pantalla, COLOR_BOTON, rect)
+        texto_render = fuente_boton.render(texto, True, COLOR_TEXTO)
+        pantalla.blit(texto_render, (rect.x + 20, rect.y + 10))
+        botones.append(rect)
+    return botones
 
-    def crear_menu_principal(self):
-        self.menu_principal = tk.Frame(self, bg=COLOR_FONDO_MENU_PRINCIPAL)
+def abrir_modo_libre():
+    # Abre el mapa desde tu clase original
+    mapa = MapaDesplazable()
+    mapa.run()
 
-        titulo = tk.Label(self.menu_principal, text="🏛️ APP ROMA", font=FUENTE_TITULO,
-                          bg=COLOR_FONDO_MENU_PRINCIPAL, fg="gold")
-        titulo.pack(pady=20)
+def cambiar_menu(nuevo_menu):
+    global menu_actual
+    menu_actual = nuevo_menu
 
-        botones = [
-            ("▶️ Continuar", self.continuar),
-            ("🛡️ Nuevo Juego", self.mostrar_menu_nuevo_juego),
-            ("⚙️ Configuraciones", self.abrir_configuraciones),
-            ("❌ Salir", self.confirmar_salida)
-        ]
+reloj = pygame.time.Clock()
+corriendo = True
 
-        for texto, comando in botones:
-            boton = tk.Button(self.menu_principal, text=texto, font=FUENTE_BOTON, command=comando,
-                              width=ANCHO_BOTON, bg=COLOR_BOTON_BG, fg=COLOR_BOTON_FG,
-                              activebackground=COLOR_BOTON_ACTIVE_BG)
-            boton.pack(pady=8)
+while corriendo:
+    reloj.tick(60)
+    opciones = opciones_menu_principal if menu_actual == "principal" else opciones_nuevo_juego
+    titulo = "🏛️ APP ROMA" if menu_actual == "principal" else "Nuevo Juego"
+    botones = dibujar_menu(opciones, titulo)
 
-    def crear_menu_nuevo_juego(self):
-        self.menu_nuevo_juego = tk.Frame(self, bg=COLOR_FONDO_MENU_NUEVO_JUEGO)
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            corriendo = False
+        elif evento.type == pygame.MOUSEBUTTONDOWN:
+            for i, boton in enumerate(botones):
+                if boton.collidepoint(evento.pos):
+                    opciones[i][1]()  # Ejecuta la función asociada
 
-        opciones = [
-            ("🏺 Campaña", lambda: messagebox.showinfo("Modo Campaña", "Modo Campaña seleccionado")),
-            ("🏛️ Modo Libre", self.abrir_modo_libre),
-            ("🧱 Creativo", lambda: messagebox.showinfo("Modo Creativo", "Modo Creativo seleccionado")),
-            ("🔙 Atrás", self.volver_menu_principal)
-        ]
+    pygame.display.flip()
 
-        for texto, comando in opciones:
-            boton = tk.Button(self.menu_nuevo_juego, text=texto, font=FUENTE_BOTON, command=comando,
-                              width=ANCHO_BOTON, bg=COLOR_BOTON_BG, fg=COLOR_BOTON_FG,
-                              activebackground=COLOR_BOTON_ACTIVE_BG)
-            boton.pack(pady=10)
-
-    def mostrar_menu(self, menu):
-        """Oculta todos los menús y muestra solo el indicado"""
-        for m in [self.menu_principal, self.menu_nuevo_juego]:
-            if m is not None:
-                m.place_forget()
-        menu.place(relx=0.5, rely=0.5, anchor="center")
-
-    def mostrar_menu_nuevo_juego(self):
-        self.mostrar_menu(self.menu_nuevo_juego)
-
-    def volver_menu_principal(self):
-        self.mostrar_menu(self.menu_principal)
-
-    def continuar(self):
-        messagebox.showinfo("Continuar", "Continuar presionado")
-
-    def abrir_configuraciones(self):
-        # Ejemplo simple de ventana de configuraciones
-        ventana = tk.Toplevel(self)
-        ventana.title("Configuraciones")
-        ventana.geometry("400x300")
-        ventana.resizable(False, False)
-        label = tk.Label(ventana, text="Aquí van las configuraciones", font=FUENTE_BOTON)
-        label.pack(pady=20)
-        boton_cerrar = tk.Button(ventana, text="Cerrar", command=ventana.destroy)
-        boton_cerrar.pack(pady=10)
-
-    def confirmar_salida(self):
-        if messagebox.askyesno("Salir", "¿Estás seguro que quieres salir?"):
-            self.quit()
-    def abrir_modo_libre(self):
-        self.withdraw()
-        def run_mapa(self=self):
-            mapa = MapaDesplazable()
-            mapa.run()
-            self.deiconify()
-        threading.Thread(target=run_mapa, daemon=True).start()
-if __name__ == "__main__":
-    app = AppRoma()
-    app.mainloop()
+pygame.quit()
