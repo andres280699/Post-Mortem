@@ -2,6 +2,8 @@ import pygame
 import sys
 import math
 
+
+
 class MapaDesplazable:
     def __init__(self):
         pygame.init()
